@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
 import "./WebcamCapture.css"; // Import du fichier CSS
@@ -28,11 +28,8 @@ const WebcamCapture: React.FC = () => {
             const blob = await (await fetch(capturedImage)).blob();
             const formData = new FormData();
             formData.append("file", blob, "captured_image.jpg");
-
-            // Utilisation de l'URL dynamique provenant du fichier .env
-            const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+            const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
             const response = await axios.post(`${apiUrl}/process_image`, formData);
-
             setResults({
                 baseImage: response.data.base_image,
                 imageWithHole: response.data.image_with_hole,

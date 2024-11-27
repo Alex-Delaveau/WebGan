@@ -8,6 +8,7 @@ import io
 import base64
 from PIL import Image
 from flask_cors import CORS
+import tensorflow as tf
 
 # Charger les variables d'environnement
 load_dotenv()
@@ -27,17 +28,33 @@ MASK_SIZE = (48, 48)  # Taille du masque
 IMG_SIZE = (128, 128)  # Taille de l'image redimensionnée pour le modèle
 
 
-def add_random_noise_hole(image, mask_size=MASK_SIZE):
-    """Add a square with random noise to the image."""
-    image_with_hole = image.copy()
-    h, w, _ = image_with_hole.shape
+def add_random_noise_hole(image, img_size=IMG_SIZE, mask_size=MASK_SIZE):
+    """Adds a fixed mask at the center with random noise inside."""
+    h, w = img_size
     mh, mw = mask_size
+
+    # Calculate the fixed position for the mask
     x_start = (w - mw) // 2
     y_start = (h - mh) // 2
 
-    # Add noise in the range [0, 255]
-    noise = np.random.randint(0, 256, (mh, mw, 3), dtype=np.uint8)
-    image_with_hole[y_start:y_start+mh, x_start:x_start+mw, :] = noise
+    # Generate random noise for the mask area
+    noise = tf.random.uniform((mh, mw, 3), 0, 1)  # Random noise in [0, 1]
+
+    # Apply the noise mask
+    image_with_hole = tf.identity(image)
+    indices = tf.reshape(
+        tf.stack(
+            tf.meshgrid(
+                tf.range(y_start, y_start + mh),
+                tf.range(x_start, x_start + mw),
+                indexing='ij'
+            ),
+            axis=-1
+        ),
+        [-1, 2]
+    )
+    updates = tf.reshape(noise, [-1, 3])
+    image_with_hole = tf.tensor_scatter_nd_update(image_with_hole, indices, updates)
 
     return image_with_hole
 
@@ -55,10 +72,13 @@ def preprocess_image(image_bytes, img_size=IMG_SIZE, mask_size=MASK_SIZE):
     # Resize and normalize to [0, 1]
     img = cv2.resize(img, img_size) / 255.0
 
-    # Add random noise hole
-    image_with_hole = add_random_noise_hole((img * 255).astype(np.uint8), mask_size=mask_size) / 255.0
+    # Convert to TensorFlow tensor
+    img_tensor = tf.convert_to_tensor(img, dtype=tf.float32)
 
-    return img, image_with_hole
+    # Add random noise hole
+    image_with_hole_tensor = add_random_noise_hole(img_tensor, img_size=img_size, mask_size=mask_size)
+
+    return img, image_with_hole_tensor.numpy()
 
 
 def run_inference(image_with_hole):
