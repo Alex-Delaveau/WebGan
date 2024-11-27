@@ -28,7 +28,7 @@ const WebcamCapture: React.FC = () => {
             const formData = new FormData();
             formData.append("file", blob, "captured_image.jpg");
     
-            const response = await axios.post("http://localhost:5000/process_image", formData);
+            const response = await axios.post("https://api-webgan.talluan.fr/process_image", formData);
             console.log("API Response:", response.data);
             // Correctly map the API response to the `results` state
             setResults({

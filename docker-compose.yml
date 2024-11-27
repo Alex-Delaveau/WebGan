@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: webgan_frontend
+    ports:
+      - "11000:3000" # Serveur local -> Port Docker
+    networks:
+      - webgan_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: webgan_backend
+    ports:
+      - "11001:5000"
+    networks:
+      - webgan_network
+
+networks:
+  webgan_network:
+    driver: bridge

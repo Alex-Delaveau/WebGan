@@ -10,9 +10,9 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 # Load the trained model once at server startup
-model = load_model('/home/alex/enseirb/gan-inpainting-app/backend/models/generator_epoch_20.h5')
+model = load_model('models/generator_epoch_20.h5')
 
-CORS(app, origins=["http://localhost:5173"])
+CORS(app, origins=["https://webgan.talluan.fr", "https://api.webgan.talluan.fr"])
 
 # Configurable variables
 MASK_SIZE = (48, 48)  # Size of the mask
