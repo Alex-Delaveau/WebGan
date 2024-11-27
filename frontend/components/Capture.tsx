@@ -1,6 +1,7 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState } from "react";
 import Webcam from "react-webcam";
 import axios from "axios";
+import "./WebcamCapture.css"; // Import du fichier CSS
 
 const WebcamCapture: React.FC = () => {
     const webcamRef = useRef<Webcam>(null);
@@ -22,15 +23,16 @@ const WebcamCapture: React.FC = () => {
 
     const uploadImage = async () => {
         if (!capturedImage) return;
-    
+
         try {
-            const blob = await (await fetch(capturedImage)).blob(); // Convert base64 to blob
+            const blob = await (await fetch(capturedImage)).blob();
             const formData = new FormData();
             formData.append("file", blob, "captured_image.jpg");
-    
-            const response = await axios.post("https://api-webgan.talluan.fr/process_image", formData);
-            console.log("API Response:", response.data);
-            // Correctly map the API response to the `results` state
+
+            // Utilisation de l'URL dynamique provenant du fichier .env
+            const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
+            const response = await axios.post(`${apiUrl}/process_image`, formData);
+
             setResults({
                 baseImage: response.data.base_image,
                 imageWithHole: response.data.image_with_hole,
@@ -41,18 +43,11 @@ const WebcamCapture: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        if (results) {
-            console.log("Results updated:", results);
-        }
-    }, [results]);  
-
     return (
-        <div style={{ textAlign: "center" }}>
-            <h1>GAN Inpainting Demo</h1>
-            <div style={{ display: "flex", justifyContent: "center", gap: "20px", alignItems: "center" }}>
-                {/* Webcam View */}
-                <div style={{ position: "relative", display: "inline-block" }}>
+        <div className="container">
+            <h1 className="title">GAN Inpainting Demo</h1>
+            <div className="webcam-section">
+                <div className="webcam-wrapper">
                     <Webcam
                         ref={webcamRef}
                         audio={false}
@@ -62,139 +57,42 @@ const WebcamCapture: React.FC = () => {
                             height: 1024,
                             facingMode: "user",
                         }}
-                        style={{
-                            width: 256,
-                            height: 256,
-                            border: "2px solid #ddd",
-                            borderRadius: "8px",
-                            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-                            transform: "scaleX(-1)", // Flip the image horizontally
-                        }}
+                        className="webcam"
                     />
-                    <div
-                        style={{
-                            position: "absolute",
-                            top: "50%",
-                            left: "50%",
-                            width: `${squareSize}px`,
-                            height: `${squareSize}px`,
-                            border: "2px solid red",
-                            transform: "translate(-50%, -50%)",
-                        }}
-                    ></div>
+                    <div className="red-square" style={{ width: `${squareSize}px`, height: `${squareSize}px` }}></div>
                 </div>
-
-                {/* Captured Image */}
                 {capturedImage && (
-                    <div style={{ position: "relative", display: "inline-block" }}>
-                        <img
-                            src={capturedImage}
-                            alt="Captured"
-                            style={{
-                                width: "256px",
-                                height: "256px",
-                                borderRadius: "8px",
-                                border: "2px solid #ddd",
-                                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-                            }}
-                        />
-                        <div
-                            style={{
-                                position: "absolute",
-                                top: "50%",
-                                left: "50%",
-                                width: `${squareSize}px`,
-                                height: `${squareSize}px`,
-                                border: "2px solid red",
-                                transform: "translate(-50%, -50%)",
-                            }}
-                        ></div>
+                    <div className="image-wrapper">
+                        <img src={capturedImage} alt="Captured" className="captured-image" />
+                        <div className="red-square" style={{ width: `${squareSize}px`, height: `${squareSize}px` }}></div>
                     </div>
                 )}
             </div>
 
-            <button
-                onClick={capture}
-                style={{
-                    marginTop: "20px",
-                    padding: "10px 20px",
-                    fontSize: "16px",
-                    cursor: "pointer",
-                    backgroundColor: "#007bff",
-                    color: "white",
-                    borderRadius: "5px",
-                    border: "none",
-                }}
-            >
-                Capture Image
-            </button>
+            <div className="button-group">
+                <button onClick={capture} className="button capture-button">Capture Image</button>
+                <button onClick={uploadImage} className="button upload-button">Upload Image</button>
+            </div>
 
-            <button
-                onClick={uploadImage}
-                style={{
-                    marginLeft: "10px",
-                    marginTop: "20px",
-                    padding: "10px 20px",
-                    fontSize: "16px",
-                    cursor: "pointer",
-                    backgroundColor: "#28a745",
-                    color: "white",
-                    borderRadius: "5px",
-                    border: "none",
-                }}
-            >
-                Upload Image
-            </button>
-
-            {/* Results */}
             {results && (
-                <div style={{ marginTop: "20px" }}>
-                    <h2>Results</h2>
-                    <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-                        <div>
+                <div className="results">
+                    <h2 className="subtitle">Results</h2>
+                    <div className="results-grid">
+                        <div className="result-item">
                             <h3>Base Image</h3>
-                            <img
-                                src={`data:image/jpeg;base64,${results.baseImage}`}
-                                alt="Base"
-                                style={{
-                                    width: "200px",
-                                    height: "200px",
-                                    borderRadius: "8px",
-                                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-                                }}
-                            />
+                            <img src={`data:image/jpeg;base64,${results.baseImage}`} alt="Base" className="result-image" />
                         </div>
-                        <div>
+                        <div className="result-item">
                             <h3>Image with Hole</h3>
-                            <img
-                                src={`data:image/jpeg;base64,${results.imageWithHole}`}
-                                alt="With Hole"
-                                style={{
-                                    width: "200px",
-                                    height: "200px",
-                                    borderRadius: "8px",
-                                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-                                }}
-                            />
+                            <img src={`data:image/jpeg;base64,${results.imageWithHole}`} alt="With Hole" className="result-image" />
                         </div>
-                        <div>
+                        <div className="result-item">
                             <h3>Prediction</h3>
-                            <img
-                                src={`data:image/jpeg;base64,${results.prediction}`}
-                                alt="Prediction"
-                                style={{
-                                    width: "200px",
-                                    height: "200px",
-                                    borderRadius: "8px",
-                                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-                                }}
-                            />
+                            <img src={`data:image/jpeg;base64,${results.prediction}`} alt="Prediction" className="result-image" />
                         </div>
                     </div>
                 </div>
             )}
-
-
         </div>
     );
 };

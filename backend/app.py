@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 import numpy as np
 import cv2
 from tensorflow.keras.models import load_model
@@ -7,16 +9,22 @@ import base64
 from PIL import Image
 from flask_cors import CORS
 
+# Charger les variables d'environnement
+load_dotenv()
+
 app = Flask(__name__)
 
-# Load the trained model once at server startup
-model = load_model('models/generator_epoch_20.h5')
+# Charger le modèle depuis le fichier spécifié dans l'environnement
+model_path = os.getenv("MODEL_PATH", "models/generator_epoch_20.h5")
+model = load_model(model_path)
 
-CORS(app, origins=["https://webgan.talluan.fr", "https://api.webgan.talluan.fr"])
+# Configurer CORS
+cors_origins = os.getenv("CORS_ORIGINS", "").split(",")
+CORS(app, origins=cors_origins)
 
-# Configurable variables
-MASK_SIZE = (48, 48)  # Size of the mask
-IMG_SIZE = (128, 128)  # Size of the resized image for model input
+# Variables configurables
+MASK_SIZE = (48, 48)  # Taille du masque
+IMG_SIZE = (128, 128)  # Taille de l'image redimensionnée pour le modèle
 
 
 def add_random_noise_hole(image, mask_size=MASK_SIZE):
@@ -104,4 +112,6 @@ def process_image():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", 5000))
+    app.run(host=host, port=port)
